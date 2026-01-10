@@ -16,7 +16,7 @@ class llm_worker(WorkerThread):
             logging.critical("Failed to start llm_worker: required field results_dir is missing")
             sys.exit(1)
 
-        self.config.image_name = "ghcr.io/oran-testing/llm_worker"
+        self.config.image_name = "ghcr.io/cueltschey/rt-env-test"
         self.cleanup_old_containers()
 
         self.config.container_env = {
