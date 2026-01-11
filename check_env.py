@@ -151,11 +151,9 @@ def check_influxdb(url, token, org, bucket, port):
 
     try:
         client = InfluxDBClient(
-            url=url,
-            token=token,
+            f"http://{url}:{port}",
             org=org,
-            port=port,
-            timeout=3000
+            token=token
         )
 
         health = client.health()
