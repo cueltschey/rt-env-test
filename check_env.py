@@ -5,6 +5,10 @@ import os
 import sys
 import socket
 
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.exceptions import InfluxDBError
+
+
 VALID_UHD_IMG_EXTENSIONSS = {".bin", ".hex", ".bit", ".img"}
 
 
@@ -142,6 +146,48 @@ def check_config_file(path):
         return False
 
 
+def check_influxdb(url, token, org, bucket):
+    print(f"\n[CHECK] InfluxDB instance: {url}")
+
+    try:
+        client = InfluxDBClient(
+            url=url,
+            token=token,
+            org=org,
+            timeout=3000
+        )
+
+        health = client.health()
+        if health.status != "pass":
+            print(f"  ❌ InfluxDB health check failed: {health.message}")
+            return False
+        print("  ✅ InfluxDB health check passed")
+
+        orgs_api = client.organizations_api()
+        orgs = orgs_api.find_organizations(org=org)
+        if not orgs:
+            print(f"  ❌ Organization '{org}' not found")
+            return False
+        print(f"  ✅ Organization '{org}' exists")
+
+        buckets_api = client.buckets_api()
+        bucket_obj = buckets_api.find_bucket_by_name(bucket)
+        if not bucket_obj:
+            print(f"  ❌ Bucket '{bucket}' not found")
+            return False
+        print(f"  ✅ Bucket '{bucket}' exists")
+
+        client.close()
+        return True
+
+    except InfluxDBError as e:
+        print(f"  ❌ InfluxDB API error: {e}")
+        return False
+    except Exception as e:
+        print(f"  ❌ Failed to connect to InfluxDB: {e}")
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="UHD / USRP environment validation")
 
@@ -161,6 +207,13 @@ def main():
         action="append",
         help="Check readable configuration file path. Can be used multiple times."
     )
+
+    parser.add_argument("--check-influxdb", action="store_true",
+                        help="Check InfluxDB connectivity and credentials")
+    parser.add_argument("--influx-url", help="InfluxDB URL (e.g. http://localhost:8086)")
+    parser.add_argument("--influx-token", help="InfluxDB access token")
+    parser.add_argument("--influx-org", help="InfluxDB organization")
+    parser.add_argument("--influx-bucket", help="InfluxDB bucket")
 
     args = parser.parse_args()
 
@@ -186,6 +239,19 @@ def main():
     if args.check_config:
         for path in args.check_config:
             if not check_config_file(path):
+                failed = True
+
+    if args.check_influxdb:
+        if not all([args.influx_url, args.influx_token, args.influx_org, args.influx_bucket]):
+            print("\n❌ InfluxDB check requires --influx-url, --influx-token, --influx-org, --influx-bucket")
+            failed = True
+        else:
+            if not check_influxdb(
+                args.influx_url,
+                args.influx_token,
+                args.influx_org,
+                args.influx_bucket
+            ):
                 failed = True
 
     if failed:
