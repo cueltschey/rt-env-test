@@ -4,9 +4,42 @@ import argparse
 import os
 import sys
 import socket
+import requests
 
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.exceptions import InfluxDBError
+
+class ApiInterface:
+    def __init__(self, control_ip, control_port, control_token):
+        self.control_url = f"http://{control_ip}:{control_port}"
+        self.auth_header = f"Bearer {control_token}"
+        self.headers = {}
+
+    def make_request(self, target_endpoint, payload=None):
+        if(payload):
+            return self._post_endpoint(target_endpoint, payload)
+        else:
+            return self._get_endpoint(target_endpoint)
+
+    def _post_endpoint(self, target_endpoint, json_payload):
+        self.headers = {"Authorization": self.auth_header, "Accept": "application/json", "User-Agent": "llm_worker/1.0", "Content-Type": "application/json"}
+        try:
+            response = requests.post(url=f"{self.control_url}/{target_endpoint}", headers=self.headers, json=json_payload, verify=False)
+            if response.status_code == 200:
+                return True, response.json()
+            return False, {"error": response.text}
+        except requests.exceptions.RequestException as e:
+            return False, {"error":str(e)}
+
+    def _get_endpoint(self, target_endpoint):
+        self.headers = {"Authorization": self.auth_header, "Accept": "application/json", "User-Agent": "llm_worker/1.0"}
+        try:
+            response = requests.get(url=f"{self.control_url}/{target_endpoint}", headers=self.headers, verify=False)
+            if response.status_code == 200:
+                return True, response.json()
+            return False, {"error": response.text}
+        except requests.exceptions.RequestException as e:
+            return False, {"error":str(e)}
 
 
 VALID_UHD_IMG_EXTENSIONSS = {".bin", ".hex", ".bit", ".img"}
@@ -14,8 +47,7 @@ VALID_UHD_IMG_EXTENSIONSS = {".bin", ".hex", ".bit", ".img"}
 
 def check_uhd_images(images_dir):
     print(f"\n[CHECK] UHD firmware images in: {images_dir}")
-
-    if not os.path.isdir(images_dir):
+if not os.path.isdir(images_dir):
         print("  ❌ Directory does not exist or is not a directory")
         return False
 
@@ -187,6 +219,18 @@ def check_influxdb(url, token, org, bucket, port):
         return False
 
 
+def check_api(host, port, token):
+    interface = ApiInterface(host, port, token)
+
+    worked, output = interface.make_request("list")
+
+    if not worked:
+        return False
+
+    print(f" ✅ GET to /list worked with JSON: '{output}'")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="UHD / USRP environment validation")
 
@@ -214,6 +258,13 @@ def main():
     parser.add_argument("--influx-org", default=os.environ.get("INFLUX_ORG"), help="InfluxDB organization")
     parser.add_argument("--influx-bucket", default=os.environ.get("INFLUX_BUCKET"), help="InfluxDB bucket")
     parser.add_argument("--influx-port", default=os.environ.get("INFLUX_PORT"), help="InfluxDB port")
+
+    parser.add_argument("--check-control-api", action="store_true",
+                        help="Check the control API")
+
+    parser.add_argument("--control-host", default=os.environ.get("CONTROL_HOST"), help="control API host")
+    parser.add_argument("--control-port", default=os.environ.get("CONTROL_PORT"), help="Control API port")
+    parser.add_argument("--control-token", default=os.environ.get("CONTROL_TOKEN"), help="Control API token")
 
     args = parser.parse_args()
 
@@ -249,6 +300,10 @@ def main():
             args.influx_bucket,
             args.influx_port
         ):
+            failed = True
+
+    if args.check_control_api:
+        if not check_api(args.control_host, args.control_port, args.control_token):
             failed = True
 
     if failed:
