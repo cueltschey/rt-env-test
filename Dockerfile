@@ -1,7 +1,18 @@
-FROM ubuntu:24.04
+FROM alpine:latest
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
 
-RUN apt update -y && apt install -y cowsay
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-virtualenv
 
-CMD ["cowsay", "Dummy!"]
+WORKDIR /app
+
+COPY requirements.txt .
+RUN python3 -m venv venv && \
+    ./venv/bin/pip install --no-cache-dir -r requirements.txt
+
+COPY ./check_env.py .
+
+CMD ["sh", "-c", "./venv/bin/python3 check_env.py $ARGS"]
