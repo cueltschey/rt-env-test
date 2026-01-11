@@ -15,13 +15,12 @@ class llm_worker(WorkerThread):
         self.cleanup_old_containers()
 
         self.config.container_env = {
-            "CONFIG": self.config.config_file,
+            "CONFIG": "/test.yaml",
         }
         self.setup_env()
         self.setup_networks()
 
-        if not self.config.config_file is None:
-            self.config.container_volumes[self.config.config_file] = {"bind": "/test.yaml", "mode": "ro"}
+        self.config.container_volumes[self.config.config_file] = {"bind": "/test.yaml", "mode": "ro"}
         self.setup_volumes()
 
         if self.config.process_config.get("enable_gpu", False):
