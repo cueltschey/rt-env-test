@@ -211,11 +211,11 @@ def main():
 
     parser.add_argument("--check-influxdb", action="store_true",
                         help="Check InfluxDB connectivity and credentials")
-    parser.add_argument("--influx-url", help="InfluxDB URL (e.g. http://localhost:8086)")
-    parser.add_argument("--influx-token", help="InfluxDB access token")
-    parser.add_argument("--influx-org", help="InfluxDB organization")
-    parser.add_argument("--influx-bucket", help="InfluxDB bucket")
-    parser.add_argument("--influx-port", help="InfluxDB port")
+    parser.add_argument("--influx-url", default=os.environ.get("INFLUX_HOST"), help="InfluxDB URL (e.g. http://localhost:8086)")
+    parser.add_argument("--influx-token", default=os.environ.get("INFLUX_TOKEN"), help="InfluxDB access token")
+    parser.add_argument("--influx-org", default=os.environ.get("INFLUX_ORG"), help="InfluxDB organization")
+    parser.add_argument("--influx-bucket", default=os.environ.get("INFLUX_BUCKET"), help="InfluxDB bucket")
+    parser.add_argument("--influx-port", default=os.environ.get("INFLUX_PORT"), help="InfluxDB port")
 
     args = parser.parse_args()
 
