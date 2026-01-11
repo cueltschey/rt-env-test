@@ -225,6 +225,7 @@ def check_api(host, port, token):
     worked, output = interface.make_request("list")
 
     if not worked:
+        print(f"  ❌ Encountered error when making GET to /list: {output}")
         return False
 
     print(f" ✅ GET to /list worked with JSON: '{output}'")
