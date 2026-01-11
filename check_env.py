@@ -146,7 +146,7 @@ def check_config_file(path):
         return False
 
 
-def check_influxdb(url, token, org, bucket):
+def check_influxdb(url, token, org, bucket, port):
     print(f"\n[CHECK] InfluxDB instance: {url}")
 
     try:
@@ -154,6 +154,7 @@ def check_influxdb(url, token, org, bucket):
             url=url,
             token=token,
             org=org,
+            port=port,
             timeout=3000
         )
 
@@ -214,6 +215,7 @@ def main():
     parser.add_argument("--influx-token", help="InfluxDB access token")
     parser.add_argument("--influx-org", help="InfluxDB organization")
     parser.add_argument("--influx-bucket", help="InfluxDB bucket")
+    parser.add_argument("--influx-port", help="InfluxDB port")
 
     args = parser.parse_args()
 
@@ -242,15 +244,16 @@ def main():
                 failed = True
 
     if args.check_influxdb:
-        if not all([args.influx_url, args.influx_token, args.influx_org, args.influx_bucket]):
-            print("\n❌ InfluxDB check requires --influx-url, --influx-token, --influx-org, --influx-bucket")
+        if not all([args.influx_url, args.influx_token, args.influx_org, args.influx_bucket, args.influx_port]):
+            print("\n❌ InfluxDB check requires --influx-url, --influx-token, --influx-org, --influx-bucket, --influx-port")
             failed = True
         else:
             if not check_influxdb(
                 args.influx_url,
                 args.influx_token,
                 args.influx_org,
-                args.influx_bucket
+                args.influx_bucket,
+                args.influx_port
             ):
                 failed = True
 
