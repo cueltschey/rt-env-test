@@ -244,18 +244,14 @@ def main():
                 failed = True
 
     if args.check_influxdb:
-        if not all([args.influx_url, args.influx_token, args.influx_org, args.influx_bucket, args.influx_port]):
-            print("\n❌ InfluxDB check requires --influx-url, --influx-token, --influx-org, --influx-bucket, --influx-port")
+        if not check_influxdb(
+            args.influx_url,
+            args.influx_token,
+            args.influx_org,
+            args.influx_bucket,
+            args.influx_port
+        ):
             failed = True
-        else:
-            if not check_influxdb(
-                args.influx_url,
-                args.influx_token,
-                args.influx_org,
-                args.influx_bucket,
-                args.influx_port
-            ):
-                failed = True
 
     if failed:
         print("\n❌ One or more checks FAILED")
