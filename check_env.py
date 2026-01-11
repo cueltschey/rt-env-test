@@ -47,7 +47,7 @@ VALID_UHD_IMG_EXTENSIONSS = {".bin", ".hex", ".bit", ".img"}
 
 def check_uhd_images(images_dir):
     print(f"\n[CHECK] UHD firmware images in: {images_dir}")
-if not os.path.isdir(images_dir):
+    if not os.path.isdir(images_dir):
         print("  ❌ Directory does not exist or is not a directory")
         return False
 
