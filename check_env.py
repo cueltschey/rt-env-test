@@ -5,6 +5,7 @@ import os
 import sys
 import socket
 import requests
+import time
 
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.exceptions import InfluxDBError
@@ -222,6 +223,7 @@ def check_influxdb(url, token, org, bucket, port):
 def check_api(host, port, token):
     interface = ApiInterface(host, port, token)
 
+    time.sleep(1) # Give time for controller to initialize
     worked, output = interface.make_request("list")
 
     if not worked:
